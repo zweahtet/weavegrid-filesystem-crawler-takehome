@@ -1,76 +1,67 @@
-# WeaveGrid Backend Coding Assessment
+# File System REST API
 
-## Introduction
+## Overview
+A REST API to browse and manage files and directories within a specified root directory on your file system. All file operations are restricted to the given root directory to ensure security.
 
-The purpose of this exercise is for you to show us what you're made of! We know you can code,
-but we want to see where you fit and really shine!
-We want to understand both your coding style and your documentation patterns
-while you attempt to make a simple program. We want to ensure that it is easy for others to contribute, read, and run.
+## Features
 
-The full evaluation criteria are provided below. We welcome your feedback on the exercise, as well as creative solutions.
-We are happy to accommodate changes in the test format based on your specific context.
+- **Browse directories**: list all files (including hidden ones) with metadata (name, owner, size, permissions)
+- **Read file content**: retrieve the content of text files
+- **Create files/directories**: create new files (with optional content) or directories 
+- **Update files**: replace the content of existing files
+- **Delete files and directories**: delete files or directories (directories are removed recursively)
 
-## The Exercise
+## Assumptions
+- All files are text files encoded in UTF-8.
+- File system operations are strictly confined to the specified `ROOT_DIR`.
+- A trailing slash in the URL indicates directory creation.
 
-### The Application
-The application is a small REST API to display file information from a portion of the user’s file system.
-The user will specify a root directory when launching the application. All directories from the
-root on downward are then browsable using the REST API. Additionally, the application should have the
-ability to create new files and directories within the specified portion of the user's file system.
+## Notes
+- It took me exactly 4 hours to complete this project. I took some breaks in between.
+- I run into some issues where the localhost:8000/docs page was not loading properly due to port mismatches in the Docker container, but I was able to resolve it by changing the container port to 8000.
+- Some test cases were failing due to the normalization of the URL path. The fastapi web framework automatically normalizes the URL path, and one of the test cases where I tested for accessing outside the root was failing. `/../` was being normalized to `/`, so the endpoint receives an empty string as the path and returns a 200 response rather than raising an error. I was able to resolve this by asking ChatGPT for help, and replace the literal `/../` with the `/%2E%2E/` encoded string.
 
-For example, suppose there is a directory ​`stuff/foo/`​ which contains the following:
+## Pre-requisites
+- [Docker Compose](https://docs.docker.com/compose/install/) 
 
+## Setup
+
+### 1. Prepare the data directory (optional)
+Create a directory called `data` in the project root. This directory will be mounted into the Docker container and serve as the root directory for all file operations. 
+```bash
+mkdir data
 ```
-foo1 # file
-foo2 # file
-bar/ # directory
-  bar1 # file
-  baz/ # empty subdirectory
+_(For convenience, I have already included a `data` directory in the project root with some sample files. You may add some files or directories into `data` if you want.)_
+
+### 2. Configuration (optional)
+The application requires the `ROOT_DIR` environment variable to be set, which specifies the root directory for file operations. 
+_(For convenience, the `docker-compose.yml` file sets the `ROOT_DIR` to `/data` and mounts the host's `./data` directory into the container. You may change the `ROOT_DIR` to any directory of your choice.)_
+
+### 3. Running the API using Docker Compose
+Build and start the API server by running:
+```bash
+docker compose up -d --build
+```
+This will start the API server on port `8000`. You can verify the API is running by visiting: http://localhost:8000/docs
+
+_(The `-d` flag runs the container in detached mode, so you can continue using the terminal. If you want to see the logs, you can omit the `-d` flag.)_
+
+### 4. Testing the API 
+#### Testing via the browser using Swagger UI
+Once the API is running, you can interact with it using your web browser through the Swagger UI interface: http://localhost:8000/docs
+
+#### Running Automated Tests with Docker Compose
+When you start the API server using Docker Compose, the test suite is automatically run. You can view the test results by running:
+```bash
+docker compose logs test_runner
+```
+If you want to run the tests again inside the Docker container, execute the following command from the project root:
+```bash
+docker compose up -d test_runner
 ```
 
-If the REST API application is started with root directory of  `stuff/foo`​ it will return something like:
-
-    GET / -> list contents of stuff/​foo/​ (e.g. foo1, foo2, bar/)
-    GET /bar -> list contents of ​stuff/foo/bar/​ (e.g bar1, baz/)
-    GET /foo1 -> contents of file ​stuff/foo/foo1
-    GET /bar/bar1 -> contents of file ​stuff/foo/bar/bar1
-
-Now if we wanted to create a new file, foo3, or a new directory, bar2/, in the base directory, your
-REST API will look something like:
-
-    POST /foo3
-    POST /bar2/
-
-### Basic Rules
-- You can use any programming language you like, but Python is preferred.  Infrastructure to help you
-get started on this assignment has been provided assuming Python would be used, but feel free to change things to work for your preferred language.
-  - Please inform your WeaveGrid recruiter if you intend to
-  use a language other than Python on this assignment to ensure we have an appropriate grader for you.
-- The application must be Dockerized.  You may use the dockerfile provided to you as a starting point and edit
-it as you see fit, including changing the library being used to create your API.
-- Provide an easy & user-friendly way for someone to run your application and enter the required configuration for the application.
-- Your REST API should return responses in JSON in an appropriate fashion.  Any request bodies should also be JSON.
-Please use REST API best practices when applicable.
-- Report all files in directory responses, including hidden files.  You should report file name, owner, size,
-and permissions (read/write/execute - standard octal representation is acceptable).
-  - You can assume that all files are text files of modest size (i.e., that can fit comfortably within a JSON blob).
-- Clearly state all assumptions you make in your application.
-- Write as many unit tests as you can. We don’t expect 100% code coverage, but at least include a test script
-that gives a good example of your testing strategy.
-- Document your API.
-- Comment your code.
-- Edit the README.md file for your repository fork to talk about the application you built. Feel free to remove instructions for building the app.
-If you do not have time to build a particular step in your application, we recommend writing about it in your README.md.
-- Enjoy yourself.
-
-### Extra Credit
-- Create PUT and DELETE endpoints to replace and delete directories and files as appropriate. Any request bodies should be JSON.
-
-## Time Expectations
-Please don’t spend more than 4 hours maximum on the entire exercise and let us know how long you spend on this exercise in the README.md file. If you have concerns about the time needed, please don’t hesitate to reach out with questions. Our goal is to understand enough about your coding strategy so you will be able to demonstrate some of your best practices when we next meet in person!
-
-## How to submit your work
-
-1. Visit https://github.com/weavegrid/wg-takehome-filesystem-crawler and select "Use this template" > "Create a new repository" in the upper right corner of the Github UI.
-2. Create a **private** copy of the repository in your own github account. Call it whatever you want but make sure it's private. We will not accept PR's against this repo as application submission.
-2. When you're done with your work, your recruiter will give you the Github usernames of the engineers who will be reviewing your work so you can give them access to the repository.
+### 5. Stopping the API
+Stop the API server by running:
+```bash
+docker compose down
+```
