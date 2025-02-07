@@ -1,11 +1,21 @@
 FROM python:3.10-alpine
-WORKDIR /wg-takehome
 
-COPY requirements.txt ./
-RUN pip3 install -r requirements.txt
+# Prevent Python from writing pyc files to disc and enable stdout/stderr logging.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
+# Set the working directory
+WORKDIR /filesystem_crawler
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copy the entireapplication code
 COPY . .
 
-# Feel free to swap out this command if you do not want to use FastAPI
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "filesystem_crawler.main:app"]
+# Export port 8000 for the FastAPI application
+EXPOSE 8000
+
+CMD ["uvicorn", "filesystem_crawler.main:app", "--host", "0.0.0.0", "--port", "8000" ]
 

@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ROOT_DIR: "/data"
+    volumes:
+      - .:/filesystem_crawler
+      # Mount the host directory "data" to the container's "/data"
+      - ./data:/data
+
+  test_runner:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: pytest tests/ -vv --cov=filesystem_crawler --cov-report=term-missing
+    depends_on:
+      - backend
+    environment:
+      ROOT_DIR: "/data"
+    volumes:
+      - .:/filesystem_crawler
